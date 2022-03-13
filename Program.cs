@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using org.mariuszgromada.math.mxparser;
 
 namespace _1._1laba
 {
@@ -10,14 +11,24 @@ namespace _1._1laba
     {
         static void Main()
         {
-            const int n = 5;
-            const double a = 1;
-            const double b = 2;
+            int n;
+            double a, b;
+
+            Console.Write("Введите n: ");
+            n = int.Parse(Console.ReadLine());
+            Console.Write("Введите a: ");
+            a = double.Parse(Console.ReadLine());
+            Console.Write("Введите b: ");
+            b = double.Parse(Console.ReadLine());
 
             double[,] matrix = generate(n + 1, a, b);
 
             Console.WriteLine("Исходная табличная функция");
             print(matrix);
+
+            double[] coefficients = calculationCoefficients(matrix, n + 1);
+
+            Console.WriteLine(p(matrix, n + 1, coefficients, 1));
 
             Console.Read();
         }
@@ -55,6 +66,42 @@ namespace _1._1laba
             return 0.6 + 0.5 * Math.Log(x);
         }
 
+        private static double p(double[,] matrix, int size, double[] coefficients, double x)
+        {
+            double result = coefficients[0];
+            for (int i = 1; i < size; ++i)
+            {
+                double temp = coefficients[i];
+                for(int j = 0; j < i; ++j)
+                {
+                    temp *= x - matrix[0, j];
+                }
+                result += temp;
+            }
+            return result;
+        }
+
+        private static string p(double[,] matrix, int size, double[] coefficients)
+        {
+            string result = "p(x) = " + coefficients[0].ToString();
+            for (int i = 1; i < size; ++i)
+            {
+                if (coefficients[i] >= 0)
+                {
+                    result += "+";
+                }
+
+                result += coefficients[i].ToString();
+                for (int j = 0; j < i; ++j)
+                {
+                    result += "*(x";
+                    result += matrix[0, j] < 0 ? "+" : "-";
+                    result += Math.Abs(matrix[0, j]).ToString() + ")";
+                }
+            }
+            return result;
+        }
+
         private static void print(double[,] matrix)
         {
             int n = matrix.GetLength(0);
@@ -67,6 +114,36 @@ namespace _1._1laba
                 }
                 Console.WriteLine();
             }
+        }
+
+        private static double[] calculationCoefficients(double[,] matrix, int size)
+        {
+            double[] coefficients = new double[size];
+
+            double[,] tempMatrix = new double[size * 2 - 1, size];
+            double[] tempX = new double[size * 2 - 1];
+            for (int i = 0, j = 0; i < size * 2 - 1 && j < size; i += 2, ++j)
+            {
+                tempMatrix[i, 0] = matrix[1, j];
+                tempX[i] = matrix[0, j];
+            }
+
+            int indent = 1;
+            while (indent <= size - 1)
+            {
+                for (int i = indent; i < (size * 2 - 1) - indent; i += 2) 
+                {
+                    tempMatrix[i, indent] = (tempMatrix[i + 1, indent - 1] - tempMatrix[i - 1, indent - 1]) / (tempX[i + indent] - tempX[i - indent]);
+                }
+                indent++;
+            }
+
+            for (int i = 0; i < size; i++)
+            {
+                coefficients[i] = tempMatrix[i, i];
+            }
+
+            return coefficients;
         }
     }
 }
