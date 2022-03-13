@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using org.mariuszgromada.math.mxparser;
 
@@ -9,11 +13,19 @@ namespace _1._1laba
 {
     internal class Program
     {
+        private struct ToSave
+        {
+            public double[] X { get; set; }
+            public double[] Y { get; set; }
+            public double[] InterpolationValues { get; set; }
+            public double[] XForDrawing { get; set; }
+        };
+
         static void Main()
         {
             int n;
             double a, b;
-
+            int degree;
             Console.Write("Введите n: ");
             n = int.Parse(Console.ReadLine());
             Console.Write("Введите a: ");
@@ -26,11 +38,103 @@ namespace _1._1laba
             Console.WriteLine("Исходная табличная функция");
             print(matrix);
 
+            Console.Write("Введите степень многочлена: ");
+            degree = int.Parse(Console.ReadLine());
+
             double[] coefficients = calculationCoefficients(matrix, n + 1);
 
-            Console.WriteLine(p(matrix, n + 1, coefficients, 1));
+            double[] interpolationValues = new double[n + 1];
+            for (int i = 0; i < n + 1; ++i)
+            {
+                interpolationValues[i] = p(matrix, degree + 1, coefficients, matrix[0, i]);
+            }
+
+            double maxError = countError(matrix, n + 1, coefficients, a, b, degree);
+
+            Console.WriteLine($"Погрешность = {maxError}");
+
+            double[] interpolationValuesForDrawing = createInterpolationValuesForDrawing(matrix, n + 1, coefficients, a, b, degree, out double[] xForDrawing);
+
+            drawingGraph(matrix, interpolationValuesForDrawing, xForDrawing, n + 1);  
 
             Console.Read();
+        }
+
+        //static double[] createInterpolationValuesForDrawing(double[,] matrix, int size, double[] coefficients, double[] xForDrawing)
+        //{
+        //    double[] res = new double[size * 2 - 2];
+        //    for (int i = 0; i < size * 2 - 2; i += 2)
+        //    {
+        //        xForDrawing[i] = matrix[0, i / 2];
+        //        res[i] = p(matrix, size, coefficients, xForDrawing[i]);
+        //    }
+
+        //    for (int i = 0; i < size * 2 - 2; i += 2)
+        //    {
+        //        xForDrawing[i + 1] = (matrix[0, i / 2] + matrix[0, (i / 2) + 1]) / 2;
+        //        res[i + 1] = p(matrix, size, coefficients, xForDrawing[i]);
+        //    }
+
+        //    //res[size - 1] = p(matrix, size, coefficients, matrix[0, size - 1]);
+        //    return res;
+        //}
+
+        static double[] createInterpolationValuesForDrawing(double[,] matrix, int size, double[] coefficients, double a, double b, int degree, out double[] xForDrawing)
+        {
+            double[] res = new double[size * 3];
+            xForDrawing = new double[size * 3];
+            double step = (b - a) / (size * 3 - 1);
+            for (int i = 0; i < size * 3; ++i)
+            {
+                xForDrawing[i] = a + i * step;
+                res[i] = p(matrix, degree, coefficients, xForDrawing[i]);
+            }
+            return res;
+        }
+
+        static double countError(double[,] matrix, int size, double[] coefficients, double a, double b, int degree)
+        {
+            double res = 0;
+            double step = (b - a) / (size * 3 - 1);
+            for (int i = 0; i < size * 3; ++i)
+            {
+                double x = a + i * step;
+                double temp = Math.Abs(p(matrix, degree, coefficients, x) - f(x));
+                if (temp > res)
+                {
+                    res = temp;
+                }
+            }
+            return res;
+        }
+
+        static void drawingGraph(double[,] matrix, double[] interpolationValues, double[] xForDrawing, int size)
+        {
+            try
+            {
+                ToSave data = new ToSave();
+                double[] x = new double[size];
+                double[] y = new double[size];
+                for (int i = 0; i < size; ++i)
+                {
+                    x[i] = matrix[0, i];
+                    y[i] = matrix[1, i];
+                }
+                data.X = x;
+                data.Y = y;
+                data.InterpolationValues = interpolationValues;
+                data.XForDrawing = xForDrawing;
+
+                string json = JsonSerializer.Serialize(data);
+                File.WriteAllText(@"D:\лабы\6 семестр\ЧМ\1.1laba\Save\temp.json", json);
+
+                Process p = Process.Start(@"D:\лабы\6 семестр\ЧМ\1.1laba\visualizationGraphs\visualizationGraphs.py");
+                p.WaitForExit();
+            }
+            catch (Win32Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         private static double[,] generate(int n, double a, double b)
@@ -63,7 +167,7 @@ namespace _1._1laba
 
         private static double f(double x)
         {
-            return 0.6 + 0.5 * Math.Log(x);
+            return 1.2 * x * x * x - 1;
         }
 
         private static double p(double[,] matrix, int size, double[] coefficients, double x)
