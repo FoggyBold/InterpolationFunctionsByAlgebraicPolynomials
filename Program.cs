@@ -60,25 +60,6 @@ namespace _1._1laba
             Console.Read();
         }
 
-        //static double[] createInterpolationValuesForDrawing(double[,] matrix, int size, double[] coefficients, double[] xForDrawing)
-        //{
-        //    double[] res = new double[size * 2 - 2];
-        //    for (int i = 0; i < size * 2 - 2; i += 2)
-        //    {
-        //        xForDrawing[i] = matrix[0, i / 2];
-        //        res[i] = p(matrix, size, coefficients, xForDrawing[i]);
-        //    }
-
-        //    for (int i = 0; i < size * 2 - 2; i += 2)
-        //    {
-        //        xForDrawing[i + 1] = (matrix[0, i / 2] + matrix[0, (i / 2) + 1]) / 2;
-        //        res[i + 1] = p(matrix, size, coefficients, xForDrawing[i]);
-        //    }
-
-        //    //res[size - 1] = p(matrix, size, coefficients, matrix[0, size - 1]);
-        //    return res;
-        //}
-
         static double[] createInterpolationValuesForDrawing(double[,] matrix, int size, double[] coefficients, double a, double b, int degree, out double[] xForDrawing)
         {
             double[] res = new double[size * 3];
@@ -88,6 +69,19 @@ namespace _1._1laba
             {
                 xForDrawing[i] = a + i * step;
                 res[i] = p(matrix, degree, coefficients, xForDrawing[i]);
+            }
+            return res;
+        }
+
+        static double[] createErrorValues(double[,] matrix, int size, double[] coefficients, double a, double b, int degree, out double[] xForDrawing)
+        {
+            double[] res = new double[size * 3];
+            xForDrawing = new double[size * 3];
+            double step = (b - a) / (size * 3 - 1);
+            for (int i = 0; i < size * 3; ++i)
+            {
+                xForDrawing[i] = a + i * step;
+                res[i] = Math.Abs(p(matrix, degree, coefficients, xForDrawing[i]) - f(xForDrawing[i]));
             }
             return res;
         }
