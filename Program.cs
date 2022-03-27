@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using org.mariuszgromada.math.mxparser;
 
 namespace _1._1laba
 {
@@ -25,7 +20,6 @@ namespace _1._1laba
         {
             int n;
             double a, b;
-            int degree;
             Console.Write("Введите n: ");
             n = int.Parse(Console.ReadLine());
             Console.Write("Введите a: ");
@@ -38,22 +32,19 @@ namespace _1._1laba
             Console.WriteLine("Исходная табличная функция");
             print(matrix);
 
-            Console.Write("Введите степень многочлена: ");
-            degree = int.Parse(Console.ReadLine());
-
             double[] coefficients = calculationCoefficients(matrix, n + 1);
 
             double[] interpolationValues = new double[n + 1];
             for (int i = 0; i < n + 1; ++i)
             {
-                interpolationValues[i] = p(matrix, degree + 1, coefficients, matrix[0, i]);
+                interpolationValues[i] = p(matrix, n + 1, coefficients, matrix[0, i]);
             }
 
-            double maxError = countError(matrix, n + 1, coefficients, a, b, degree);
+            double maxError = countError(matrix, n + 1, coefficients, a, b, n);
 
             Console.WriteLine($"Погрешность = {maxError}");
 
-            double[] interpolationValuesForDrawing = createInterpolationValuesForDrawing(matrix, n + 1, coefficients, a, b, degree, out double[] xForDrawing);
+            double[] interpolationValuesForDrawing = createInterpolationValuesForDrawing(matrix, n + 1, coefficients, a, b, n, out double[] xForDrawing);
 
             drawingGraph(matrix, interpolationValuesForDrawing, xForDrawing, n + 1);  
 
@@ -62,12 +53,17 @@ namespace _1._1laba
 
         static double[] createInterpolationValuesForDrawing(double[,] matrix, int size, double[] coefficients, double a, double b, int degree, out double[] xForDrawing)
         {
-            double[] res = new double[size * 3];
-            xForDrawing = new double[size * 3];
-            double step = (b - a) / (size * 3 - 1);
-            for (int i = 0; i < size * 3; ++i)
+            double[] res = new double[size * 2 - 1];
+            xForDrawing = new double[size * 2 - 1];
+            for(int i = 0, j = 0; i < size * 2 - 1; i += 2, j++)
             {
-                xForDrawing[i] = a + i * step;
+                xForDrawing[i] = matrix[0, j];
+                res[i] = p(matrix, degree, coefficients, xForDrawing[i]);
+            }
+
+            for(int i = 1; i < size * 2 - 1; i += 2)
+            {
+                xForDrawing[i] = xForDrawing[i - 1] + (xForDrawing[i + 1] - xForDrawing[i - 1]) / 2;
                 res[i] = p(matrix, degree, coefficients, xForDrawing[i]);
             }
             return res;
@@ -89,11 +85,9 @@ namespace _1._1laba
         static double countError(double[,] matrix, int size, double[] coefficients, double a, double b, int degree)
         {
             double res = 0;
-            double step = (b - a) / (size * 3 - 1);
-            for (int i = 0; i < size * 3; ++i)
+            for (int i = 0; i < size; ++i)
             {
-                double x = a + i * step;
-                double temp = Math.Abs(p(matrix, degree, coefficients, x) - f(x));
+                double temp = Math.Abs(p(matrix, degree, coefficients, matrix[0, i]) - matrix[1, i]);
                 if (temp > res)
                 {
                     res = temp;
@@ -145,7 +139,7 @@ namespace _1._1laba
         {
             for (int i = 0; i < size; ++i)
             {
-                matrix[0, i] = (a + b) / 2 - (b - a) * Math.Cos((2 * i + 1) * Math.PI / (2 * size + 2)) / 2;
+                matrix[0, i] = (a + b) / 2 - (b - a) * Math.Cos((2 * i + 1) * Math.PI / (2 * (size - 1) + 2)) / 2;
                 matrix[1, i] = f(matrix[0, i]);
             }
         }
@@ -154,14 +148,14 @@ namespace _1._1laba
         {
             for (int i = 0; i < size; ++i)
             {
-                matrix[0, i] = a + (b - a) * i / size;
+                matrix[0, i] = a + (b - a) * i / (size - 1);
                 matrix[1, i] = f(matrix[0, i]);
             }
         }
 
         private static double f(double x)
         {
-            return 1.2 * x * x * x - 1;
+            return /*1.2 * x * x * x - 1*/Math.Log(x) * 2;
         }
 
         private static double p(double[,] matrix, int size, double[] coefficients, double x)
@@ -175,27 +169,6 @@ namespace _1._1laba
                     temp *= x - matrix[0, j];
                 }
                 result += temp;
-            }
-            return result;
-        }
-
-        private static string p(double[,] matrix, int size, double[] coefficients)
-        {
-            string result = "p(x) = " + coefficients[0].ToString();
-            for (int i = 1; i < size; ++i)
-            {
-                if (coefficients[i] >= 0)
-                {
-                    result += "+";
-                }
-
-                result += coefficients[i].ToString();
-                for (int j = 0; j < i; ++j)
-                {
-                    result += "*(x";
-                    result += matrix[0, j] < 0 ? "+" : "-";
-                    result += Math.Abs(matrix[0, j]).ToString() + ")";
-                }
             }
             return result;
         }
