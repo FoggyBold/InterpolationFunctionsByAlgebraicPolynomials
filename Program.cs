@@ -46,7 +46,7 @@ namespace _1._1laba
 
             double[] interpolationValuesForDrawing = createInterpolationValuesForDrawing(matrix, n + 1, coefficients, a, b, n, out double[] xForDrawing);
 
-            drawingGraph(matrix, interpolationValuesForDrawing, xForDrawing, n + 1);  
+            drawingGraph(matrix, interpolationValuesForDrawing, xForDrawing, n + 1);
 
             Console.Read();
         }
@@ -71,12 +71,17 @@ namespace _1._1laba
 
         static double[] createErrorValues(double[,] matrix, int size, double[] coefficients, double a, double b, int degree, out double[] xForDrawing)
         {
-            double[] res = new double[size * 3];
-            xForDrawing = new double[size * 3];
-            double step = (b - a) / (size * 3 - 1);
-            for (int i = 0; i < size * 3; ++i)
+            double[] res = new double[size * 2 - 1];
+            xForDrawing = new double[size * 2 - 1];
+            for (int i = 0, j = 0; i < size * 2 - 1; i += 2, j++)
             {
-                xForDrawing[i] = a + i * step;
+                xForDrawing[i] = matrix[0, j];
+                res[i] = Math.Abs(p(matrix, degree, coefficients, xForDrawing[i]) - f(xForDrawing[i]));
+            }
+
+            for (int i = 1; i < size * 2 - 1; i += 2)
+            {
+                xForDrawing[i] = xForDrawing[i - 1] + (xForDrawing[i + 1] - xForDrawing[i - 1]) / 2;
                 res[i] = Math.Abs(p(matrix, degree, coefficients, xForDrawing[i]) - f(xForDrawing[i]));
             }
             return res;
@@ -155,7 +160,7 @@ namespace _1._1laba
 
         private static double f(double x)
         {
-            return /*1.2 * x * x * x - 1*/Math.Log(x) * 2;
+            return x * x - 2 * x;
         }
 
         private static double p(double[,] matrix, int size, double[] coefficients, double x)
